@@ -14,9 +14,12 @@ public class PlayerFire : MonoBehaviour
     // 수류탄 궤적 그리기용 변수
     public float simulationTime = 5.0f;
     public float interval = 0.1f;
+    public float mass = 5;
+
 
     List<Vector3> trajectory = new List<Vector3>();
     ParticleSystem bulletEffect;
+    LineRenderer line;
 
     void Start()
     {
@@ -24,6 +27,7 @@ public class PlayerFire : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
 
         bulletEffect = bulletFXObject.GetComponent<ParticleSystem>();
+        line = firePosition.GetComponent<LineRenderer>();
     }
 
     void Update()
@@ -47,7 +51,7 @@ public class PlayerFire : MonoBehaviour
             RaycastHit hitInfo;
 
             // 2-3. 만들어진 레이를 지정된 방향과 거리만큼 발사한다.
-            bool isHit = Physics.Raycast(ray, out hitInfo, 1000);
+            bool isHit = Physics.Raycast(ray, out hitInfo, 1000, ~(1<<7));
 
             // 2-4. 만일, 레이가 충돌을 했다면 레이가 닿은 위치에 총알 이펙트를 표시한다.
             if (isHit)
@@ -68,8 +72,11 @@ public class PlayerFire : MonoBehaviour
         {
             // 수류탄이 날아가는 궤적을 그린다.
             Vector3 startPos = firePosition.position;
-            Vector3 dir = transform.TransformDirection(direction);
+            //Vector3 dir = transform.TransformDirection(direction);
+            //dir.Normalize();
+            Vector3 dir = Camera.main.transform.forward + Camera.main.transform.up;
             dir.Normalize();
+
             Vector3 gravity = Physics.gravity;
             int simulCount = (int)(simulationTime / interval);
 
@@ -78,12 +85,44 @@ public class PlayerFire : MonoBehaviour
             {
                 float currentTime = interval * i;
 
-                // p = p0 + vt - 0.5 * g * t * t;
-                Vector3 result = startPos + dir * throwPower * currentTime + 0.5f * gravity * currentTime * currentTime;
+                // p = p0 + vt - 0.5 * g * t^2 * m^2;
+                Vector3 result = startPos + dir * throwPower * currentTime + 0.5f * gravity * currentTime * currentTime * MathF.Pow(mass, 2);
 
-                trajectory.Add(result);
+                // 계산된 result 위치와 직전 위치 사이에 충돌할 물체가 있는지 확인한다.
+                // Raycast를 이용
+                if (trajectory.Count > 0)
+                {
+                    Vector3 rayDir = result - trajectory[trajectory.Count - 1];
+                    Ray ray = new Ray(trajectory[trajectory.Count - 1], rayDir.normalized);
+                    RaycastHit hitInfo;
+
+                    // 만일, 부딪힌 대상이 있다면...
+                    if (Physics.Raycast(ray, out hitInfo, rayDir.magnitude))
+                    {
+                        // 그 지점을 리스트에 추가하고 반복문을 종료한다.
+                        trajectory.Add(hitInfo.point);
+                        break;
+                    }
+                    // 그렇지 않다면...
+                    else
+                    {
+                        // result 위치를 리스트에 추가한다.
+                        trajectory.Add(result);
+                    }
+                }
+                else
+                {
+                    trajectory.Add(result);
+                }
             }
 
+            // 라인 렌더러로 trajectory 예측선을 화면에 그린다.
+            line.positionCount = trajectory.Count;
+            line.SetPositions(trajectory.ToArray());
+            line.startWidth = 0.1f;
+            line.endWidth = 0.1f;
+            line.startColor = Color.white;
+            line.endColor = Color.white;
         }
         // 만일, 마우스의 우측 버튼을 눌렀다가 떼면...
         else if (Input.GetMouseButtonUp(1))
@@ -94,7 +133,11 @@ public class PlayerFire : MonoBehaviour
             Rigidbody rb = bomb.GetComponent<Rigidbody>();
             if(rb != null)
             {
-                Vector3 dir = transform.TransformDirection(direction);
+                rb.mass = mass;
+
+                //Vector3 dir = transform.TransformDirection(direction);
+                //dir.Normalize();
+                Vector3 dir = Camera.main.transform.forward + Camera.main.transform.up;
                 dir.Normalize();
 
                 // 물리적으로 발사하기
