@@ -22,7 +22,7 @@ public class PlayerMove : MonoBehaviour
     // 바닥에 충돌이 있을 때까지는 아래로 계속 내려가게 하고 싶다.
     // 방향: 아래, 크기: 중력
     Vector3 gravityPower;
-
+    
     void Start()
     {
         // 최초의 회전 상태대로 시작을 하고 싶다(전역 변수 초기화).
@@ -116,5 +116,11 @@ public class PlayerMove : MonoBehaviour
         transform.eulerAngles = new Vector3(0, rotY, 0);
         Camera.main.transform.GetComponent<FollowCamera>().rotX = rotX;
     }
+
+
+    //private void OnControllerColliderHit(ControllerColliderHit hit)
+    //{
+        
+    //}
 
 }
