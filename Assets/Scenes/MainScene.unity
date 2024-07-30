@@ -684,7 +684,7 @@ MonoBehaviour:
   mass: 1
   grenadeRange: 10
   targetTexture: {fileID: 975407713}
-  attackPower: 20
+  attackPower: 110
 --- !u!1 &342558736
 GameObject:
   m_ObjectHideFlags: 0
@@ -1261,14 +1261,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   myState: 0
-  patrolRadius: 4
-  patrolSpeed: 5
-  traceSpeed: 9
-  attackRange: 2
-  sightRange: 30
-  sightDistance: 15
-  maxTraceDistance: 25
   drawGizmos: 1
+  initPreferences:
+    patrolRadius: 4
+    patrolSpeed: 5
+    traceSpeed: 9
+    attackRange: 2
+    sightRange: 30
+    sightDistance: 15
+    maxTraceDistance: 25
   maxHP: 100
   target: {fileID: 0}
 --- !u!1 &1315076443
