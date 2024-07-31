@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerMove : ActorBase
 {
@@ -9,12 +10,15 @@ public class PlayerMove : ActorBase
     public float yVelocity = 2;
     public float jumpPower = 4;
     public int maxJumpCount = 1;
+    public Image img_hitUI;
 
     // 회전 값을 미리 계산하기 위한 회전축(x, y) 변수
     float rotX;
     float rotY;
     float yPos;
     int currentJumpCount = 0;
+    float currentTime = 0.5f;
+    bool timerStart = false;
 
     CharacterController cc;
 
@@ -41,6 +45,16 @@ public class PlayerMove : ActorBase
         Move();
         Rotate();
 
+        // 히트 UI 타이머
+        //if(timerStart)
+        //{
+        //    currentTime -= Time.deltaTime;
+        //    if(currentTime < 0)
+        //    {
+        //        timerStart = false;
+        //        img_hitUI.gameObject.SetActive(false);
+        //    }
+        //}    
     }
 
     // "Horizontal"과 "Vertical" 입력을 이용해서 수평면으로 이동하게 하고 싶다.
@@ -123,9 +137,35 @@ public class PlayerMove : ActorBase
         base.TakeDamage(atkPower, hitDir, attacker);
 
         myStatus.currentHP = Mathf.Clamp(myStatus.currentHP - atkPower, 0, myStatus.maxHP);
-        print("내 체력: " + myStatus.currentHP);
+        //print("내 체력: " + myStatus.currentHP);
+
+        // img_hitUI 오브젝트를 활성화했다가, 0.5초 뒤에 다시 비활성화한다.
+        StartCoroutine(DeActivateHitUI(0.5f));
     }
 
+
+    // 코루틴 함수
+    IEnumerator DeActivateHitUI(float delayTime)
+    {
+        //float addValue = 0.05f;
+        for (int i = 0; i < 100; i++)
+        {
+            Color colorVector = img_hitUI.color;
+            print(colorVector);
+            float addValue = 0.05f;
+            if (i > 49)
+            {
+                addValue *= -1;
+            }
+            colorVector.a += addValue;
+            img_hitUI.color = colorVector;
+            //yield return new WaitForSeconds(delayTime);
+            yield return null;
+        }
+       
+    }
+
+    
 
     //private void OnControllerColliderHit(ControllerColliderHit hit)
     //{
