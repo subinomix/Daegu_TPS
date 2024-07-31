@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerMove : MonoBehaviour
+public class PlayerMove : ActorBase
 {
-    public float moveSpeed = 7.0f;
+    public PlayerStateBase myStatus;
     public float rotSpeed = 200.0f;
     public float yVelocity = 2;
     public float jumpPower = 4;
@@ -85,7 +85,7 @@ public class PlayerMove : MonoBehaviour
         dir.y = yPos;
 
         //transform.position += dir * moveSpeed * Time.deltaTime;
-        cc.Move(dir * moveSpeed * Time.deltaTime);
+        cc.Move(dir * myStatus.speed * Time.deltaTime);
         //cc.SimpleMove(dir * moveSpeed);
     }
 
@@ -117,10 +117,19 @@ public class PlayerMove : MonoBehaviour
         Camera.main.transform.GetComponent<FollowCamera>().rotX = rotX;
     }
 
+    // 데미지 받았을 때에 실행할 함수
+    public override void TakeDamage(float atkPower, Vector3 hitDir, Transform attacker)
+    {
+        base.TakeDamage(atkPower, hitDir, attacker);
+
+        myStatus.currentHP = Mathf.Clamp(myStatus.currentHP - atkPower, 0, myStatus.maxHP);
+        print("내 체력: " + myStatus.currentHP);
+    }
+
 
     //private void OnControllerColliderHit(ControllerColliderHit hit)
     //{
-        
+
     //}
 
 }
