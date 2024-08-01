@@ -20,6 +20,8 @@ public class PlayerFire : MonoBehaviour
 
     public float attackPower = 20;
 
+    public Animator myAnim;
+
     List<Vector3> trajectory = new List<Vector3>();
     ParticleSystem bulletEffect;
     LineRenderer line;
@@ -49,6 +51,8 @@ public class PlayerFire : MonoBehaviour
         // 1. 마우스 왼쪽 버튼 입력 체크
         if (Input.GetMouseButtonDown(0))
         {
+            myAnim.SetTrigger("Fire");
+
             // 2. 방향, 레이 생성, 체크 거리
             // 2-1. 레이를 만든다.
             Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
