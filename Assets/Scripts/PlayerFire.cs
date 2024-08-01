@@ -17,8 +17,8 @@ public class PlayerFire : MonoBehaviour
     public float mass = 5;
     public float grenadeRange = 5.0f;
     public GameObject targetTexture;
-
     public float attackPower = 20;
+    public Animator myAnim;
 
     public Animator myAnim;
 

@@ -9,10 +9,7 @@ public class PlayerMove : ActorBase
     {
         Normal,
         Jump,
-
     }
-
-
 
     public PlayerStateBase myStatus;
     public float rotSpeed = 200.0f;
@@ -32,14 +29,13 @@ public class PlayerMove : ActorBase
     float[] idleAnims = new float[4] { 0.0f, 0.3f, 0.6f, 1.0f };
 
     CharacterController cc;
-
     PlayerMoveState myMoveState = PlayerMoveState.Normal;
 
     // 중력을 적용하고 싶다.
     // 바닥에 충돌이 있을 때까지는 아래로 계속 내려가게 하고 싶다.
     // 방향: 아래, 크기: 중력
     Vector3 gravityPower;
-    
+
     void Start()
     {
         // 최초의 회전 상태대로 시작을 하고 싶다(전역 변수 초기화).
@@ -52,11 +48,10 @@ public class PlayerMove : ActorBase
         // 중력 값을 초기화한다.
         gravityPower = Physics.gravity;
 
-        // 2초에 한번씩 Idle 애니메미션을 변경하는 코루틴 함수를 실행한다.
+        // 2초에 한 번씩 Idle 애니메이션을 변경하는 코루틴 함수를 실행한다.
         StartCoroutine(SelectIdleMotion(2.0f));
 
     }
-
 
     IEnumerator SelectIdleMotion(float changeTime)
     {
@@ -64,7 +59,8 @@ public class PlayerMove : ActorBase
         {
             // 지정된 시간마다 0~3 사이의 랜덤한 값을 뽑는다.
             int num = Random.Range(0, 4);
-            // idleAnims 배열의 뽑은 인덱스의 해당하는 값을 에니메이터의 SelectedIdle 변수의 값으로 넣어준다.
+
+            // idleAnims 배열의 뽑은 인덱스의 해당하는 값을 애니메이터의 SelectedIdle 변수의 값으로 넣어준다.
             playerAnim.SetFloat("SelectedIdle", idleAnims[num]);
 
             yield return new WaitForSeconds(changeTime);
@@ -74,21 +70,19 @@ public class PlayerMove : ActorBase
 
     void Update()
     {
-        
-            Move();
-        
+        Move();
         Rotate();
+
         // 히트 UI 타이머
         //if(timerStart)
         //{
         //    currentTime -= Time.deltaTime;
-        //    if(currentTime <= 0)
+        //    if(currentTime < 0)
         //    {
         //        timerStart = false;
         //        img_hitUI.gameObject.SetActive(false);
-
         //    }
-        //}
+        //}    
     }
 
     // "Horizontal"과 "Vertical" 입력을 이용해서 수평면으로 이동하게 하고 싶다.
@@ -99,6 +93,7 @@ public class PlayerMove : ActorBase
     {
         float h = 0;
         float v = 0;
+
         if (myMoveState == PlayerMoveState.Normal)
         {
             // 1. 수평 이동 계산
@@ -118,17 +113,18 @@ public class PlayerMove : ActorBase
         playerAnim.SetFloat("DirLength", dir.magnitude);
         dir = transform.TransformDirection(dir);
         dir.Normalize();
-        
+
+
         // 2. 수직 이동 계산
 
         // 중력 적용
         yPos += gravityPower.y * yVelocity * Time.deltaTime;
 
+        // 점프를 하지 않았는데 캐릭터 컨트롤러에 충돌이 없는 경우
         Ray ray = new Ray(transform.position, transform.up * -1);
         RaycastHit hitInfo;
-        bool isHit = Physics.Raycast(ray, out hitInfo, (cc.height + cc.skinWidth + 0.2f) * 0.5f, ~(1 << 7));
+        bool isHit = Physics.Raycast(ray, out hitInfo, (cc.height + cc.skinWidth + 0.4f) * 0.5f, ~(1 << 7));
 
-        // 점프를 하지 않았는데 캐릭터 컨트롤러에 충돌이 없는 경우
         if(myMoveState != PlayerMoveState.Jump && !isHit)
         {
             // 자유 낙하 애니메이션 신호를 준다.
@@ -137,14 +133,15 @@ public class PlayerMove : ActorBase
 
 
         // 바닥에 닿아있을 때에는 yPos의 값을 0으로 초기화한다.
-        if(cc.collisionFlags == CollisionFlags.CollidedBelow)
+        //if (cc.collisionFlags == CollisionFlags.CollidedBelow)
+        if(isHit)
         {
-            // 점프했다가 땅에 착지했을때 1.25초 뒤에 이동할 수 있는 상태로 전환한다.
-            if(myMoveState == PlayerMoveState.Jump)
+            // 점프 했다가 땅에 착지했을 때 1.25초 뒤에 이동할 수 있는 상태로 전환한다.
+            if (myMoveState == PlayerMoveState.Jump)
             {
                 playerAnim.SetBool("Jump", false);
                 currentTime += Time.deltaTime;
-                if(currentTime > 0.3f)
+                if (currentTime > 0.3f)
                 {
                     currentTime = 0;
                     myMoveState = PlayerMoveState.Normal;
@@ -153,14 +150,14 @@ public class PlayerMove : ActorBase
 
             yPos = 0;
             currentJumpCount = 0;
-            
+
         }
 
         // 키보드의 스페이스바를 누르면 위쪽으로 점프를 하게 하고 싶다.
         if (Input.GetButtonDown("Jump") && currentJumpCount < maxJumpCount)
         {
-            // 땅에서 처음 첨프할 때 점프 상태로 전환한다.
-            if(myMoveState == PlayerMoveState.Normal)
+            // 땅에서 처음 점프할 때 점프 상태로 전환한다.
+            if (myMoveState == PlayerMoveState.Normal)
             {
                 myMoveState = PlayerMoveState.Jump;
             }
@@ -213,21 +210,21 @@ public class PlayerMove : ActorBase
         myStatus.currentHP = Mathf.Clamp(myStatus.currentHP - atkPower, 0, myStatus.maxHP);
         //print("내 체력: " + myStatus.currentHP);
 
-        // img_hitUI 오브젝트를 활성화했다가, 0.5초 뒤에 비활성화한다.
-        img_hitUI.gameObject.SetActive(true);
+        // img_hitUI 오브젝트를 활성화했다가, 0.5초 뒤에 다시 비활성화한다.
         StartCoroutine(DeActivateHitUI(0.5f));
     }
+
 
     // 코루틴 함수
     IEnumerator DeActivateHitUI(float delayTime)
     {
-        // float addValue = 0.05f;
-        for(int i = 0; i < 40; i++)
+        //float addValue = 0.05f;
+        for (int i = 0; i < 100; i++)
         {
             Color colorVector = img_hitUI.color;
             print(colorVector);
             float addValue = 0.05f;
-            if (i > 19)
+            if (i > 49)
             {
                 addValue *= -1;
             }
@@ -235,8 +232,8 @@ public class PlayerMove : ActorBase
             img_hitUI.color = colorVector;
             //yield return new WaitForSeconds(delayTime);
             yield return null;
-
         }
+
     }
 
 
