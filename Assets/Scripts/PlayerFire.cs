@@ -20,7 +20,6 @@ public class PlayerFire : MonoBehaviour
     public float attackPower = 20;
     public Animator myAnim;
 
-    public Animator myAnim;
 
     List<Vector3> trajectory = new List<Vector3>();
     ParticleSystem bulletEffect;
