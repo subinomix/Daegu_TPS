@@ -222,7 +222,7 @@ public class PlayerMove : ActorBase
         for (int i = 0; i < 100; i++)
         {
             Color colorVector = img_hitUI.color;
-            print(colorVector);
+            //print(colorVector);
             float addValue = 0.05f;
             if (i > 49)
             {
