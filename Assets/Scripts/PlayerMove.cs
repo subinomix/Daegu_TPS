@@ -181,25 +181,25 @@ public class PlayerMove : ActorBase
     void Rotate()
     {
         float mouseX = Input.GetAxis("Mouse X");
-        float mouseY = Input.GetAxis("Mouse Y");
+        //float mouseY = Input.GetAxis("Mouse Y");
 
         // 각 축 별로 회전 값을 미리 계산한다(R = R0 + vt).
-        rotX += mouseY * rotSpeed * Time.deltaTime;
+        //rotX += mouseY * rotSpeed * Time.deltaTime;
         rotY += mouseX * rotSpeed * Time.deltaTime;
 
         // 상하 회전은 -60도 ~ +60도까지로 제한한다.
-        if (rotX > 60.0f)
-        {
-            rotX = 60.0f;
-        }
-        else if (rotX < -60.0f)
-        {
-            rotX = -60.0f;
-        }
+        //if (rotX > 60.0f)
+        //{
+        //    rotX = 60.0f;
+        //}
+        //else if (rotX < -60.0f)
+        //{
+        //    rotX = -60.0f;
+        //}
 
         // 계산된 회전 값을 나의 트랜스폼 회전 값으로 적용한다.
         transform.eulerAngles = new Vector3(0, rotY, 0);
-        Camera.main.transform.GetComponent<FollowCamera>().rotX = rotX;
+        //Camera.main.transform.GetComponent<FollowCamera>().rotX = rotX;
     }
 
     // 데미지 받았을 때에 실행할 함수
@@ -209,6 +209,9 @@ public class PlayerMove : ActorBase
 
         myStatus.currentHP = Mathf.Clamp(myStatus.currentHP - atkPower, 0, myStatus.maxHP);
         //print("내 체력: " + myStatus.currentHP);
+
+        // 카메라 로테이션 셰이킹!
+        Camera.main.GetComponent<ShakeObject>().ShakeRot();
 
         // img_hitUI 오브젝트를 활성화했다가, 0.5초 뒤에 다시 비활성화한다.
         StartCoroutine(DeActivateHitUI(0.5f));
