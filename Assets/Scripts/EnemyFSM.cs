@@ -1,10 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Experimental.GlobalIllumination;
 using Random = UnityEngine.Random;
 using UnityEngine.UI;
 using UnityEngine.Rendering;
+using UnityEngine.AI;
 
 
 public class EnemyFSM : ActorBase
@@ -41,6 +41,8 @@ public class EnemyFSM : ActorBase
     Vector3 hitDirection;
     float[] idleBlendValue = new float[] { 0, 0.5f, 1.0f };
     int idleNumber = 0;
+
+    NavMeshAgent smith;
     
     [SerializeField]
     Transform target;
@@ -53,6 +55,16 @@ public class EnemyFSM : ActorBase
         //myStatus.Initialize(100, 9);
         //myStatus.patrolSpeed = 5;
         hpSlider.value = myStatus.currentHP / myStatus.maxHP;
+        smith = GetComponent<NavMeshAgent>();
+        if(smith != null)
+        {
+            smith.speed = myStatus.patrolSpeed;
+            smith.angularSpeed = 300.0f;
+            smith.acceleration = 35.0f;
+            smith.autoBraking = true;
+            smith.autoTraverseOffMeshLink = false;
+            smith.stoppingDistance = 1.0f;
+        }
     }
 
     void Update()
@@ -105,6 +117,9 @@ public class EnemyFSM : ActorBase
             idleNumber = (idleNumber + 1) % 3;
             float selectedIdle = idleBlendValue[idleNumber];
             enemyAnim.SetFloat("SelectedIdle", selectedIdle);
+
+            // 네비메시 에이전트의 목적지로 PatrolNext 지점을 설정한다.
+            smith.SetDestination(patrolNext);
         }
 
     }
@@ -115,13 +130,13 @@ public class EnemyFSM : ActorBase
 
         // 선택된 지점으로 이동한다.
         Vector3 dir = patrolNext - transform.position;
-        dir.y = 0;
+        //dir.y = 0;
 
-        if (dir.magnitude > 0.1f)
+        if (dir.magnitude > 1.0f)
         {
-            cc.Move(dir.normalized * myStatus.patrolSpeed * Time.deltaTime);
+            //cc.Move(dir.normalized * myStatus.patrolSpeed * Time.deltaTime);
             // 이동하려는 방향으로 회전한다.
-            transform.rotation = Quaternion.LookRotation(dir.normalized);
+            //transform.rotation = Quaternion.LookRotation(dir.normalized);
         }
         // 목적지에 도달하고, 2초~3초 사이만큼 대기한 다음 다른 지점을 추첨한다.
         else
@@ -152,6 +167,10 @@ public class EnemyFSM : ActorBase
             idleTime = Random.Range(2.0f, 3.0f);
 
             enemyAnim.SetBool("PatrolStart", false);
+
+            // 강제로 네비메시 에이전트를 멈춘다.
+            smith.isStopped = true;
+            smith.ResetPath();
 
         }
     }
@@ -208,6 +227,10 @@ public class EnemyFSM : ActorBase
             myState = EnemyState.Return;
             print("My State: Trace -> Return");
             enemyAnim.SetBool("Returning", true);
+
+            smith.speed = myStatus.speed;
+            smith.SetDestination(patrolCenter);
+
             return;
         }
 
@@ -220,8 +243,10 @@ public class EnemyFSM : ActorBase
         if (dir.magnitude > selectedRange)
         {
             // 타겟을 향해 추격 이동한다.
-            cc.Move(dir.normalized * myStatus.speed * Time.deltaTime);
-            transform.rotation = Quaternion.LookRotation(dir.normalized);
+            //cc.Move(dir.normalized * myStatus.speed * Time.deltaTime);
+            //transform.rotation = Quaternion.LookRotation(dir.normalized);
+            smith.SetDestination(target.position);
+            smith.speed = myStatus.speed;
         }
         else
         {
@@ -240,6 +265,8 @@ public class EnemyFSM : ActorBase
                 print("My State: Trace -> MeleeAttack");
                 enemyAnim.SetTrigger("Attack");
             }
+            smith.isStopped = true;
+            smith.ResetPath();
         }
     }
 
@@ -285,33 +312,42 @@ public class EnemyFSM : ActorBase
             currentTime = 0;
             return;
         }
-        else if(dist > initPreferences.attackRange)
-        {
-            // 일정시간 대기한다.
-            currentTime += Time.deltaTime;
-            // 일정 시간이 지났다면 상태를 다시 원거리 공격 상태로 전환한다.
-            if (currentTime > 1.5f)
-            {
-                currentTime = 0;
-                myState = EnemyState.FarAttack;
-                print("My State: AttackDelay -> FarAttack");
-                enemyAnim.SetTrigger("FarAttack");
-            }
-        }
-
         // 원거리 공격 상태로 전환한다.
         else
         {
             // 일정시간 대기한다.
             currentTime += Time.deltaTime;
-            // 일정 시간이 지났다면 상태를 다시 근거리 공격 상태로 전환한다.
-            if (currentTime > 1.5f)
+
+            Vector3 dir = target.position - transform.position;
+            dir.y = 0;
+            dir.Normalize();
+
+            transform.rotation = Quaternion.LookRotation(dir);
+            if (dist > initPreferences.attackRange)
             {
-                currentTime = 0;
-                myState = EnemyState.MeleeAttack;
-                print("My State: AttackDelay -> MeleeAttack");
-                enemyAnim.SetTrigger("Attack");
+                // 일정 시간이 지났다면 상태를 다시 원거리 공격 상태로 전환한다.
+                if (currentTime > 1.5f)
+                {
+                    currentTime = 0;
+                    myState = EnemyState.FarAttack;
+                    print("My State: AttackDelay -> FarAttack");
+                    enemyAnim.SetTrigger("FarAttack");
+                    
+                }
             }
+            else
+            {
+                // 일정 시간이 지났다면 상태를 다시 근거리 공격 상태로 전환한다.
+                if (currentTime > 1.5f)
+                {
+                    currentTime = 0;
+                    myState = EnemyState.MeleeAttack;
+                    print("My State: AttackDelay -> MeleeAttack");
+                    enemyAnim.SetTrigger("Attack");
+                }
+            }
+
+           
         }
 
     }
@@ -323,8 +359,12 @@ public class EnemyFSM : ActorBase
         dir.y = 0;
 
         // 목적지에 근접했다면...
-        if (dir.magnitude < 0.1f)
+        if (dir.magnitude < 1.1f)
         {
+            // 내비게이션 정지
+            smith.isStopped = true;
+            smith.ResetPath();
+
             transform.position = patrolCenter;
 
             // 상태를 Idle 상태로 전환한다.
@@ -332,18 +372,21 @@ public class EnemyFSM : ActorBase
             print("My State: Return -> Idle");
             enemyAnim.SetBool("Returning", false);
 
+            smith.speed = myStatus.patrolSpeed;
         }
         // 그렇지 않았다면...
-        else
-        {
-            cc.Move(dir.normalized * myStatus.speed * Time.deltaTime);
-            transform.rotation = Quaternion.LookRotation(dir.normalized);
-        }
+        //else
+        //{
+        //    cc.Move(dir.normalized * myStatus.speed * Time.deltaTime);
+        //    transform.rotation = Quaternion.LookRotation(dir.normalized);
+        //}
 
     }
 
     private void OnDamaged()
     {
+
+
         // 일정 시간 뒤로 물러났다가(knock-back) 상태를 Trace 상태로 전환한다.
         transform.position = Vector3.Lerp(transform.position, hitDirection, 0.05f);
 
@@ -353,6 +396,7 @@ public class EnemyFSM : ActorBase
             print("My State: Damaged -> Trace");
             //enemyAnim.SetTrigger("Trace");
             enemyAnim.SetBool("Hit", false);
+            smith.speed = myStatus.speed;
         }
     }
 
@@ -397,8 +441,15 @@ public class EnemyFSM : ActorBase
             // 3-2. 타격 방향으로 일정 거리만큼을 넉백 위치로 지정한다.
             hitDir.y = 0;
             hitDirection = transform.position + hitDir * 2.5f;
+
+            smith.isStopped = true;
+            smith.ResetPath();
+
             // 3-3. 공격자를 타겟으로 설정한다.
             target = attacker;
+            Vector3 dir = target.position - transform.position;
+            dir.y = 0;
+            transform.rotation = Quaternion.LookRotation(dir.normalized);
         }
     }
 
