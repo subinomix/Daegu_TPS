@@ -15,6 +15,7 @@ public class MouseMove : MonoBehaviour
     public GameObject obj3;
 
     public AnimationCurve heightCurve;
+    public AnimationCurve lopoCurve;
 
     Vector3 targetPos;
     NavMeshAgent smith;

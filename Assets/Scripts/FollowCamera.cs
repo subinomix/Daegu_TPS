@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class FollowCamera : MonoBehaviour
 {
@@ -20,14 +22,19 @@ public class FollowCamera : MonoBehaviour
     public Transform target;
     public bool dynamicCam = true;
     public float followSpeed = 3.0f;
+    public Image zoomUI;
 
+    Coroutine zoom;
+    float rate;
     //Transform player;
+
+    CameraController camCon;
 
 
     void Start()
     {
         //player = GameObject.Find("Player").transform;
-
+        camCon = FindObjectOfType<CameraController>();
     }
 
     void Update()
@@ -64,5 +71,47 @@ public class FollowCamera : MonoBehaviour
             // 사용자의 마우스 상하 회전 값을 x축 회전으로 넣는다.
             // transform.eulerAngles = new Vector3(-rotX, transform.eulerAngles.y, transform.eulerAngles.z);
         }
+    }
+
+
+    public void ZoomIn(bool isIn)
+    {
+        if (zoom == null)
+        {
+            print(isIn);
+            zoom = StartCoroutine(ZoomInCoroutine(isIn));
+        }
+    }
+
+    IEnumerator ZoomInCoroutine(bool isIn)
+    {
+        float currentTime = 0;
+        if (isIn)
+        {
+            rate = camCon.currentRate;
+        }
+
+        while(currentTime < 0.5f)
+        {
+            // 다른 모든 업데이트 함수가 끝날때까지 기다린다.
+            yield return new WaitForEndOfFrame();
+            // yield return new WaitForFixedUpdate();
+
+            currentTime += Time.deltaTime;
+            // 시야각을 30도로 축소
+            float startFOV = isIn ? 60 : 20;
+            float endFOV = isIn ? 20 : 60;
+            Camera.main.fieldOfView = Mathf.Lerp(startFOV, endFOV, currentTime * 2);
+
+            // 줌 UI 색상의 투명도를 1로 변경한다.
+            float zoomRate = isIn ? currentTime : 0.5f - currentTime;
+            Color zoomAlpha = new Color(zoomUI.color.r, zoomUI.color.g, zoomUI.color.b, zoomRate * 2);
+            zoomUI.color = zoomAlpha;
+
+            // 1인칭 상태로 바꾼다.
+            camCon.currentRate = Mathf.Lerp(rate, 0, zoomRate * 2);
+        }
+
+        zoom = null;
     }
 }

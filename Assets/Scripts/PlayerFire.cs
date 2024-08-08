@@ -3,6 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+public enum WeaponType
+{
+    None,
+    Pistol,
+    SniperGun,
+}
+
 public class PlayerFire : MonoBehaviour
 {
     public GameObject bulletFXObject;
@@ -10,6 +18,8 @@ public class PlayerFire : MonoBehaviour
     public Vector3 direction;
     public float throwPower = 5;
     public Transform firePosition;
+    public WeaponType myWeaponType = WeaponType.SniperGun;
+
 
     // 수류탄 궤적 그리기용 변수
     public float simulationTime = 5.0f;
@@ -24,6 +34,7 @@ public class PlayerFire : MonoBehaviour
     List<Vector3> trajectory = new List<Vector3>();
     ParticleSystem bulletEffect;
     LineRenderer line;
+    FollowCamera followCam;
 
     void Start()
     {
@@ -32,15 +43,32 @@ public class PlayerFire : MonoBehaviour
 
         bulletEffect = bulletFXObject.GetComponent<ParticleSystem>();
         line = firePosition.GetComponent<LineRenderer>();
+        if (targetTexture != null)
+        {
+            targetTexture.transform.localScale = new Vector3(grenadeRange, grenadeRange, 1);
+            targetTexture.SetActive(false);
+        }
 
-        targetTexture.transform.localScale = new Vector3(grenadeRange, grenadeRange, 1);
-        targetTexture.SetActive(false);
+        followCam = Camera.main.GetComponent<FollowCamera>();
     }
 
     void Update()
     {
         FireType1();
-        FireType2();
+        switch (myWeaponType)
+        {
+            case WeaponType.None:
+
+                break;
+            case WeaponType.Pistol:
+                FireType2();
+                break;
+            case WeaponType.SniperGun:
+                FireType3();
+                break;
+            default:
+                break;
+        }
     }
 
     
@@ -178,6 +206,27 @@ public class PlayerFire : MonoBehaviour
             }
 
             targetTexture.SetActive(false);
+        }
+    }
+
+
+    void FireType3()
+    {
+        //  마우스 우측 버튼을 누르면...
+        if (Input.GetMouseButtonDown(1))
+        {
+            // 카메라가 줌인(확대) 된다.
+            followCam.ZoomIn(true);
+
+            // 스나이퍼 UI를 표시한다.
+        }
+       // 마우스 우측 버튼을 떼면...
+        else if (Input.GetMouseButtonUp(1))
+        {
+
+            // 카메라의 배율을 다시 원래대로 돌려놓는다.
+            // 스나이퍼 UI를 투명하게 처리한다.
+            followCam.ZoomIn(false);
         }
     }
 
