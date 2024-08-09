@@ -24,5 +24,6 @@ public class EnemyActionEvents : MonoBehaviour
     public void AttackHit()
     {
         enemyState.Attack();
+        print("µ¥¹ÌÁö!");
     }
 }

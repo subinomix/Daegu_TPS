@@ -5,10 +5,11 @@ using UnityEngine.UI;
 
 public class PlayerMove : ActorBase
 {
-    enum PlayerMoveState
+    public enum PlayerMoveState
     {
         Normal,
         Jump,
+        Cinematic
     }
 
     public PlayerStateBase myStatus;
@@ -29,7 +30,8 @@ public class PlayerMove : ActorBase
     float[] idleAnims = new float[4] { 0.0f, 0.3f, 0.6f, 1.0f };
 
     CharacterController cc;
-    PlayerMoveState myMoveState = PlayerMoveState.Normal;
+    [SerializeField]
+    public PlayerMoveState myMoveState = PlayerMoveState.Normal;
 
     // 중력을 적용하고 싶다.
     // 바닥에 충돌이 있을 때까지는 아래로 계속 내려가게 하고 싶다.
@@ -180,9 +182,12 @@ public class PlayerMove : ActorBase
     // 3. 매 프레임마다 계산된 속도로 자신의 회전값을 변경한다.
     void Rotate()
     {
-        float mouseX = Input.GetAxis("Mouse X");
-        //float mouseY = Input.GetAxis("Mouse Y");
-
+        float mouseX = 0;
+        if (myMoveState != PlayerMoveState.Cinematic)
+        {
+            mouseX = Input.GetAxis("Mouse X");
+            //float mouseY = Input.GetAxis("Mouse Y");
+        }
         // 각 축 별로 회전 값을 미리 계산한다(R = R0 + vt).
         //rotX += mouseY * rotSpeed * Time.deltaTime;
         rotY += mouseX * rotSpeed * Time.deltaTime;
@@ -210,11 +215,22 @@ public class PlayerMove : ActorBase
         myStatus.currentHP = Mathf.Clamp(myStatus.currentHP - atkPower, 0, myStatus.maxHP);
         //print("내 체력: " + myStatus.currentHP);
 
-        // 카메라 로테이션 셰이킹!
-        Camera.main.GetComponent<ShakeObject>().ShakeRot();
+        if(myStatus.currentHP > 0)
+        {
+            // 카메라 로테이션 셰이킹!
+            Camera.main.GetComponent<ShakeObject>().ShakeRot();
 
-        // img_hitUI 오브젝트를 활성화했다가, 0.5초 뒤에 다시 비활성화한다.
-        StartCoroutine(DeActivateHitUI(0.5f));
+            // img_hitUI 오브젝트를 활성화했다가, 0.5초 뒤에 다시 비활성화한다.
+            StartCoroutine(DeActivateHitUI(0.5f));
+        }
+        else
+        {
+            print("죽음");
+            // 화면 흑백 효과를 포스트로 켜준다.
+            PostProcessingManager.instance.GrayScaleOn();
+            cc.enabled = false;
+        }
+
     }
 
 
