@@ -9,7 +9,8 @@ public class PlayerMove : ActorBase
     {
         Normal,
         Jump,
-        Cinematic
+        Cinematic,
+        Die
     }
 
     public PlayerStateBase myStatus;
@@ -51,7 +52,7 @@ public class PlayerMove : ActorBase
         gravityPower = Physics.gravity;
 
         // 2초에 한 번씩 Idle 애니메이션을 변경하는 코루틴 함수를 실행한다.
-        StartCoroutine(SelectIdleMotion(2.0f));
+        //StartCoroutine(SelectIdleMotion(2.0f));
 
     }
 
@@ -210,6 +211,11 @@ public class PlayerMove : ActorBase
     // 데미지 받았을 때에 실행할 함수
     public override void TakeDamage(float atkPower, Vector3 hitDir, Transform attacker)
     {
+        if(myMoveState == PlayerMoveState.Die)
+        {
+            return;
+        }
+
         base.TakeDamage(atkPower, hitDir, attacker);
 
         myStatus.currentHP = Mathf.Clamp(myStatus.currentHP - atkPower, 0, myStatus.maxHP);
@@ -225,10 +231,12 @@ public class PlayerMove : ActorBase
         }
         else
         {
-            print("죽음");
+            myMoveState = PlayerMoveState.Die;
+
             // 화면 흑백 효과를 포스트로 켜준다.
             PostProcessingManager.instance.GrayScaleOn();
             cc.enabled = false;
+            playerAnim.SetTrigger("Death");
         }
 
     }

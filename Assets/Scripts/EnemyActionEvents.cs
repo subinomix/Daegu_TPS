@@ -26,4 +26,10 @@ public class EnemyActionEvents : MonoBehaviour
         enemyState.Attack();
         print("데미지!");
     }
+
+    // 원거리 공격의 레이를 발사한다.
+    public void FarAttack()
+    {
+        enemyState.ThrowAttack();
+    }
 }

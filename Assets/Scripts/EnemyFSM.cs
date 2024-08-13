@@ -259,6 +259,11 @@ public class EnemyFSM : ActorBase
             // 공격 범위 이내로 들어가면 상태를 Attack 상태로 전환한다.
             currentTime = 0;
 
+            // 타겟을 향해 회전한다.
+            Vector3 lookDir = target.position - transform.position;
+            lookDir.Normalize();
+            transform.rotation = Quaternion.LookRotation(lookDir);
+
             if (dir.magnitude > initPreferences.attackRange)
             {
                 myState = EnemyState.FarAttack;
@@ -302,8 +307,21 @@ public class EnemyFSM : ActorBase
         //}
         #endregion
 
-
     }
+
+
+    public void ThrowAttack()
+    {
+        Ray ray = new Ray(transform.position, transform.forward);
+        RaycastHit hitInfo;
+
+        if(Physics.Raycast(ray, out hitInfo, 15, 1<<LayerMask.NameToLayer("Player")))
+        {
+            PlayerMove pm = hitInfo.transform.GetComponent<PlayerMove>();
+            pm.TakeDamage(15, Vector3.zero, transform);
+        }
+    }
+
 
     private void AttackDelay()
     {
@@ -396,6 +414,7 @@ public class EnemyFSM : ActorBase
         // 일정 시간 뒤로 물러났다가(knock-back) 상태를 Trace 상태로 전환한다.
         transform.position = Vector3.Lerp(transform.position, hitDirection, 0.05f);
 
+
         if(Vector3.Distance(transform.position, hitDirection) < 0.1f)
         {
             myState = EnemyState.Trace;
@@ -446,7 +465,19 @@ public class EnemyFSM : ActorBase
 
             // 3-2. 타격 방향으로 일정 거리만큼을 넉백 위치로 지정한다.
             hitDir.y = 0;
+
+
             hitDirection = transform.position + hitDir * 2.5f;
+
+            // 만일, 계산된 hitDirection 사이에 장애물이 있다면...
+            Ray ray = new Ray(transform.position, hitDirection);
+            RaycastHit hitInfo;
+            if (Physics.BoxCast(transform.position, new Vector3(0.5f, 1.0f, 0.5f), hitDir, out hitInfo, transform.rotation, 2.5f))
+            {
+                // hitDirection의 위치를 레이에 부딪힌 위치로부터 자신의 반지름만큼 앞쪽으로 설정한다.
+                hitDirection = hitInfo.point + hitDir * -1 * GetComponent<CapsuleCollider>().radius;
+                print("이름" + gameObject.name + "나의 위치: " + transform.position + " 넉백 위치: " + hitDirection);
+            }
 
             smith.isStopped = true;
             smith.ResetPath();

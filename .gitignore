@@ -73,3 +73,4 @@ crashlytics-build.properties
 
 # 모델링 아웃
 /[Aa]ssets/[Mm]odelings/FreeTestCharacterAsuna/*
+/[Aa]ssets/[Vv]ideo/*
